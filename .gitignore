@@ -4,4 +4,4 @@ build/
 .DS_Store
 .history
 
-.vscode
+.vscode/
