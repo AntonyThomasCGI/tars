@@ -1,12 +1,14 @@
 
-// #include <stdio.h>
+#include <stdio.h>
 // #include <stdlib.h>
 
 #include <thread>
+#include <sstream>
 // #include <chrono>
 // #include <atomic>
 
 #include "tars_audio.hpp"
+#include "tars_intent.hpp"
 // #include "tars_state.hpp"
 // #include "tars_intent.hpp"
 
@@ -23,10 +25,14 @@
 // }
 
 
+
 int main()
 {
 
-    std::thread tAudio (tars_audio::listen);
+    paSharedData *userdata;
+    
+    std::thread tAudio (tars_audio::listen, userdata);
+
 
     TARS_setState(LISTENING);
 
@@ -34,9 +40,27 @@ int main()
     {
         std::this_thread::yield();
     }
-    printf("t1:Audio event!\n");
+    printf("t1d:Audio event!\n");
 
     tAudio.join();
+
+    short *audio = userdata->recordedSamples;
+
+    char *binary;
+    for (int i=0; i<userdata->maxFrameIndex; i++ )
+    {
+        ss << audio[i];
+    }
+    std::string s = ss.str();
+    // printf("data: %s\n", s.c_str());
+
+    TARS_Intent intent = TARS_getIntent(s);
+
+    // for( int i=0; i < 600; i++)
+    // {
+    //     printf("sample: %d\n", userdata->recordedSamples[i]);
+    // }
+
 
     return 0;
 }
