@@ -3,3 +3,5 @@ build/
 # Dumb mac.
 .DS_Store
 .history
+
+.vscode
