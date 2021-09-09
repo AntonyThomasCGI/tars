@@ -12,4 +12,5 @@ target_include_directories (tars-engine PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(tars-engine 
                       PRIVATE portaudio
+                    #   PRIVATE rapidjson
                       ${CURL_LIBRARIES} )

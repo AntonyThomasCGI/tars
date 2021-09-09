@@ -14,22 +14,14 @@ FetchContent_Declare(
   
 FetchContent_MakeAvailable(portaudio)
 
-# FetchContent_Declare(
-#   curlpp
-#   GIT_REPOSITORY https://github.com/jpbarrette/curlpp.git
-#   GIT_TAG        592552a165cc569dac7674cb7fc9de3dc829906f # v0.8.1
+
+# FetchContent_Decalre(
+#   rapidjson
+#   GIT_REPOSITORY https://github.com/Tencent/rapidjson/.git
+#   GIT_TAG        f54b0e47a08782a6131cc3d60f94d038fa6e0a51 # v1.1.0
 # )
 
-# # message(STATUS "ok:")
-
-# # FetchContent_GetProperties(curlpp)
-# # if(NOT curlpp_POPULATED)
-# #   FetchContent_Populate(curlpp)
-# #   add_subdirectory(${curlpp_SOURCE_DIR} ${curlpp_BINARY_DIR})
-# # endif()
-
-# # message(STATUS ${curlpp_SOURCE_DIR})
-# # message(STATUS ${curlpp_BINARY_DIR})
+# FetchContent_MakeAvailable(rapidjson)
 
 
 
@@ -47,14 +39,6 @@ endif()
 
 
 include_directories(${CURL_INCLUDE_DIRS})
-
-
-# add_executable(tars src/main.cpp)
-# target_link_libraries(${PROJECT_NAME} 
-#                       PRIVATE portaudio
-#                       ${CURL_LIBRARIES} )
-
-
 
 add_subdirectory(src/tars_engine)
 add_subdirectory(src/tars_assistant)

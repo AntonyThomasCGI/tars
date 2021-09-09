@@ -25,11 +25,11 @@ static int recordAudioCallback(const void *inputBuffer,
                             PaStreamCallbackFlags statusFlags,
                             void *userData);
 
-static int playCallback( const void *inputBuffer, void *outputBuffer,
-                         unsigned long framesPerBuffer,
-                         const PaStreamCallbackTimeInfo* timeInfo,
-                         PaStreamCallbackFlags statusFlags,
-                         void *userData );
+static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
+                            unsigned long framesPerBuffer,
+                            const PaStreamCallbackTimeInfo* timeInfo,
+                            PaStreamCallbackFlags statusFlags,
+                            void *userData );
 
 
 class TARS_Audio
@@ -40,14 +40,29 @@ public:
 
     void startListening();
     void stopListening();
+    void startSpeaking(paSharedData *userdata);
     void record();
     void shutdown(PaError err);
 
 private:
     PaStream*           stream;
-    paSharedData        userdata;
+    // paSharedData        *userdata;
 
     void init(paSharedData *userdata);
+
 };
+
+static int recordAudioCallback(const void *inputBuffer, 
+                        void *outputBuffer,
+                        unsigned long frameCount, // (frames per buffer).
+                        const PaStreamCallbackTimeInfo *timeInfo,
+                        PaStreamCallbackFlags statusFlags,
+                        void *userData);
+
+static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
+                        unsigned long framesPerBuffer,
+                        const PaStreamCallbackTimeInfo* timeInfo,
+                        PaStreamCallbackFlags statusFlags,
+                        void *userData );
 
 #endif

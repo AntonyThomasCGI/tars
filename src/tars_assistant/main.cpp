@@ -1,38 +1,32 @@
 
 #include <stdio.h>
+#include <iostream>
 // #include <stdlib.h>
 
 #include <thread>
+#include <bitset>
+#include <string>
 #include <sstream>
+#include <fstream>
+// #include <iostream>
+// #include <memory>
 // #include <chrono>
 // #include <atomic>
 
 #include "tars_audio.hpp"
 #include "tars_intent.hpp"
-// #include "tars_state.hpp"
-// #include "tars_intent.hpp"
-
-// enum State {LISTENING, AUDIO_EVENT, SPEAKING};
-// std::atomic<State> state;
 
 
-// void test() {
-//     printf("::Listening::\n");
-
-//     std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-
-//     state.store(AUDIO_EVENT, std::memory_order_release);
-// }
 
 
 
 int main()
 {
 
-    paSharedData *userdata;
+    paSharedData *userdata = new paSharedData;
     
     std::thread tAudio (tars_audio::listen, userdata);
-
+    // std::thread tAudio (test, userdata);
 
     TARS_setState(LISTENING);
 
@@ -44,22 +38,19 @@ int main()
 
     tAudio.join();
 
-    short *audio = userdata->recordedSamples;
+    userdata->frameIndex = 0;
 
-    char *binary;
-    for (int i=0; i<userdata->maxFrameIndex; i++ )
-    {
-        ss << audio[i];
-    }
-    std::string s = ss.str();
-    // printf("data: %s\n", s.c_str());
+    printf("max: %d\n", userdata->maxFrameIndex);
 
-    TARS_Intent intent = TARS_getIntent(s);
+    const char *binarySamples = reinterpret_cast<const char *>(&userdata->recordedSamples[0]);
+    size_t binaryLen = (userdata->maxFrameIndex + 1) * sizeof(short);
 
-    // for( int i=0; i < 600; i++)
-    // {
-    //     printf("sample: %d\n", userdata->recordedSamples[i]);
-    // }
+
+    TARS_Intent intent = TARS_getIntent(binarySamples, binaryLen);
+
+    delete userdata;
+
+
 
 
     return 0;
