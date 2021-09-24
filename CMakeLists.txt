@@ -26,9 +26,7 @@ FetchContent_MakeAvailable(portaudio)
 
 
 message(STATUS "Looking for CURL")
-include(FindCURL)
-find_package(CURL REQUIRED)
-
+find_package(CURL 7.64.1 REQUIRED)
 if(CURL_FOUND)
   message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
   message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
@@ -38,7 +36,18 @@ else()
 endif()
 
 
-include_directories(${CURL_INCLUDE_DIRS})
+message(STATUS "Looking for boost")
+find_package(Boost 1.76.0 REQUIRED)
+if(Boost_FOUND)
+  message(STATUS "Found Boost version: ${Boost_VERSION_STRING}")
+  message(STATUS "Using Boost include dir(s): ${Boost_INCLUDE_DIRS}")
+  message(STATUS "Using Boost lib(s): ${Boost_LIBRARIES}")
+else()
+  message(FATAL_ERROR "Could not find Boost")
+endif()
+
+
+include_directories(${CURL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 
 add_subdirectory(src/tars_engine)
 add_subdirectory(src/tars_assistant)

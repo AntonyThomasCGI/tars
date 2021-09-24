@@ -3,21 +3,22 @@
 
 #include "tars_state.hpp"
 #include "portaudio.h"
+#include <boost/circular_buffer.hpp>
 
 typedef struct
 {
-    bool  idle; // Idle until sample above VOICE_THRESHOLD is hit.
-    int   frameIndex; // Current index.
-    int   maxFrameIndex; // Last index.
-    short *recordedSamples; // Save into this. // TODO? FIFO, looping array of 2 sec
-} paSharedData;
+    bool  voiceEvent; // Set to true when voice event happens.
+    int   timer;      // Increments if voiceEvent is true.
+    int   numSamples; // Timer counts to this value before completing.
+    boost::circular_buffer<short> recordedSamples; // short *recordedSamples; // Save into this.
+} tarsAudioData;
 
 namespace tars_audio {
 
-    void listen(paSharedData *userdata);
-
+    void run(tarsAudioData *userdata);
 
 }
+
 static int recordAudioCallback(const void *inputBuffer, 
                             void *outputBuffer,
                             unsigned long frameCount, // (frames per buffer).
@@ -25,30 +26,31 @@ static int recordAudioCallback(const void *inputBuffer,
                             PaStreamCallbackFlags statusFlags,
                             void *userData);
 
-static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
+static int playAudioCallback(const void *inputBuffer, 
+                            void *outputBuffer,
                             unsigned long framesPerBuffer,
                             const PaStreamCallbackTimeInfo* timeInfo,
                             PaStreamCallbackFlags statusFlags,
-                            void *userData );
+                            void *userData);
 
 
 class TARS_Audio
 {
 public:
-    TARS_Audio(paSharedData *userdata);
+    TARS_Audio(tarsAudioData *userdata);
     virtual ~TARS_Audio();
 
     void startListening();
     void stopListening();
-    void startSpeaking(paSharedData *userdata);
+    void startSpeaking();
     void record();
     void shutdown(PaError err);
 
 private:
-    PaStream*           stream;
-    // paSharedData        *userdata;
+    PaStream      *stream;
+    tarsAudioData *userdata;
 
-    void init(paSharedData *userdata);
+    void init();
 
 };
 

@@ -17,16 +17,12 @@
 #include "tars_intent.hpp"
 
 
-
-
-
 int main()
 {
 
-    paSharedData *userdata = new paSharedData;
-    
-    std::thread tAudio (tars_audio::listen, userdata);
-    // std::thread tAudio (test, userdata);
+    tarsAudioData *userdata = new tarsAudioData;
+
+    std::thread tAudio (tars_audio::run, userdata);
 
     TARS_setState(LISTENING);
 
@@ -36,22 +32,38 @@ int main()
     }
     printf("t1d:Audio event!\n");
 
+    // Get iterator of audio samples from beginning.
+    // boost::circular_buffer<short>::iterator sampleIt = userdata->recordedSamples.begin();
+
+    std::string stringSamples;
+    
+    size_t binaryLen = (userdata->numSamples) * sizeof(short);
+
+    for ( boost::circular_buffer<short>::iterator it = userdata->recordedSamples.begin();
+          it != userdata->recordedSamples.end(); 
+          it++ )
+    {
+        short sample = *it;
+        std::cout << sample << std::endl;
+        stringSamples.append((char*)&sample);
+    }
+    
+    
+    // printf("here1\n");
+    // // Char pointer to memory address of iterator gets the raw binary data of samples.
+    // const char *binarySamples = reinterpret_cast<const char *>(&sampleIt);
+    // printf("here2\n");
+    // // Calc the binary length.
+    // printf("here3\n");
+
+    std::cout << stringSamples << std::endl;
+
+
+    TARS_Intent intent = TARS_getIntent(stringSamples.c_str(), binaryLen);
+
+
     tAudio.join();
-
-    userdata->frameIndex = 0;
-
-    printf("max: %d\n", userdata->maxFrameIndex);
-
-    const char *binarySamples = reinterpret_cast<const char *>(&userdata->recordedSamples[0]);
-    size_t binaryLen = (userdata->maxFrameIndex + 1) * sizeof(short);
-
-
-    TARS_Intent intent = TARS_getIntent(binarySamples, binaryLen);
-
     delete userdata;
-
-
-
 
     return 0;
 }

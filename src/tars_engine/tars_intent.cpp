@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <stdio.h>
-// #include <string>
+#include <string>
 #include <curl/curl.h>
 
 // #include "rapidjson/document.h"
@@ -11,7 +11,7 @@
 // #include "rapidjson/stringbuffer.h"
 
 
-static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *userp)
+static std::size_t WriteCallback(void *contents, std::size_t size, std::size_t nmemb, void *userp)
 {
     ((std::string*)userp)->append((char*)contents, size * nmemb);
     return size * nmemb;
@@ -22,21 +22,22 @@ static size_t WriteCallback(void *contents, size_t size, size_t nmemb, void *use
 // {
 //   FILE *readhere = (FILE *)userdata;
 //   curl_off_t nread;
- 
+
 //   /* copy as much data as possible into the 'ptr' buffer, but no more than
 //      'size' * 'nmemb' bytes! */
 //   size_t retcode = fread(ptr, size, nmemb, readhere);
 
 //   nread = (curl_off_t)retcode;
- 
+
 //   fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
 //           " bytes from file\n", nread);
 //   return retcode;
 // }
 
 
-TARS_Intent TARS_getIntent(const char *audioBinary, size_t binaryLen)
+TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
 {
+    printf("here4\n");
     TARS_Intent intent;
     CURL *curl;
     CURLcode res;
@@ -68,7 +69,10 @@ TARS_Intent TARS_getIntent(const char *audioBinary, size_t binaryLen)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
+    printf("here5\n");
+
     res = curl_easy_perform(curl);
+    printf("here6\n");
     if(res != CURLE_OK)
     {
         fprintf(stderr, "curl_easy_perform failed: %s\n", curl_easy_strerror(res));

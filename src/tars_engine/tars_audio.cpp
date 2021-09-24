@@ -3,7 +3,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <thread>
-#include <atomic>
 #include <chrono>
 
 #define NUM_SECONDS (3)
@@ -16,9 +15,10 @@
 #define PRINTF_S_FORMAT "%d"
 
 
-TARS_Audio::TARS_Audio(paSharedData *userdata)
+TARS_Audio::TARS_Audio(tarsAudioData *userdata)
 {
-    init(userdata);
+    this->userdata = userdata;
+    init();
 }
 
 TARS_Audio::~TARS_Audio()
@@ -58,13 +58,13 @@ void TARS_Audio::stopListening()
     printf("@todo");
 }
 
-void TARS_Audio::startSpeaking(paSharedData *userdata)
+void TARS_Audio::startSpeaking()
 {
     PaError err;
 
     PaStreamParameters outputParameters;
 
-    userdata->frameIndex = 0;
+    userdata->timer = 0;
 
     outputParameters.device = Pa_GetDefaultOutputDevice(); /* default output device */
     if (outputParameters.device == paNoDevice) {
@@ -131,11 +131,12 @@ void TARS_Audio::shutdown(PaError err)
     }
 }
 
-void TARS_Audio::init(paSharedData *userdata)
+void TARS_Audio::init()
 {
     // TODO probably don't have to have these vars defined in private class scope..
     // just need to open stream for input/output
     // need userdata, stream .. nothing else
+
     PaStreamParameters  inputParameters,
                         outputParameters;
     PaError             err;
@@ -149,19 +150,20 @@ void TARS_Audio::init(paSharedData *userdata)
     err = paNoError;
     printf("here\n");
 
-    userdata->idle = 1;
+    userdata->voiceEvent = 0;
     printf("here2\n");
-    userdata->frameIndex = 0;
-    userdata->maxFrameIndex = totalFrames = NUM_SECONDS * SAMPLE_RATE; /* Record for a few seconds. */
+    userdata->timer = 0;
+    userdata->numSamples = totalFrames = NUM_SECONDS * SAMPLE_RATE;
     // userdata.recordedSamples = recordedSamples;
     numBytes = totalFrames * sizeof(short);
+    userdata->recordedSamples = boost::circular_buffer<short> (NUM_SECONDS * SAMPLE_RATE);
 
-    userdata->recordedSamples = (short *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
-    if( userdata->recordedSamples == NULL )
-    {
-        fprintf(stderr, "Could not allocate record array.\n"); // TODO?
-    }
-    for( i=0; i<totalFrames; i++ ) userdata->recordedSamples[i] = 0;
+    // // userdata->recordedSamples = (short *) malloc( numBytes ); /* From now on, recordedSamples is initialised. */
+    // if( userdata->recordedSamples == NULL )
+    // {
+    //     fprintf(stderr, "Could not allocate record array.\n"); // TODO?
+    // }
+    // for( i=0; i<totalFrames; i++ ) userdata->recordedSamples[i] = 0;
 
     err = Pa_Initialize();
     if( err != paNoError )
@@ -170,12 +172,12 @@ void TARS_Audio::init(paSharedData *userdata)
         return;
     }
 
-    inputParameters.device = Pa_GetDefaultInputDevice(); /* default input device */
+    inputParameters.device = Pa_GetDefaultInputDevice();
     if (inputParameters.device == paNoDevice) {
         this->shutdown(err);
         return;
     }
-    inputParameters.channelCount = 1;                    /* mono input */
+    inputParameters.channelCount = 1; // mono input
     inputParameters.sampleFormat = PA_SAMPLE_TYPE;
     inputParameters.suggestedLatency = Pa_GetDeviceInfo( inputParameters.device )->defaultLowInputLatency;
     inputParameters.hostApiSpecificStreamInfo = NULL;
@@ -195,7 +197,7 @@ void TARS_Audio::init(paSharedData *userdata)
     };
 }
 
-void tars_audio::listen(paSharedData *userdata) 
+void tars_audio::run(tarsAudioData *userdata) 
 {
     TARS_Audio tars_audio(userdata);
 
@@ -206,14 +208,14 @@ void tars_audio::listen(paSharedData *userdata)
     printf("t2:Listening\n");
     tars_audio.startListening();
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+    // std::this_thread::sleep_for(std::chrono::milliseconds(3000));
 
 
-    printf("t2:Playing back audio...\n");
+    // printf("t2:Playing back audio...\n");
 
-    tars_audio.startSpeaking(userdata);
+    // tars_audio.startSpeaking();
 
-    printf("t2:setting state.\n");
+    printf("t2:Setting state.\n");
 
     TARS_setState(AUDIO_EVENT);
 
@@ -228,7 +230,7 @@ void tars_audio::listen(paSharedData *userdata)
 //                                 PaStreamCallbackFlags statusFlags,
 //                                 void *userData ) 
 // {
-//     paSharedData *data = (paSharedData*)userData;
+//     tarsAudioData *data = (tarsAudioData*)userData;
 //     const short *rptr = (const short*)inputBuffer;
 //     short *wptr = &data->recordedSamples[data->frameIndex];
 //     int finished;
@@ -298,13 +300,13 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
                            PaStreamCallbackFlags statusFlags,
                            void *userData )
 {
-    paSharedData *data = (paSharedData*)userData;
+    tarsAudioData *data = (tarsAudioData*)userData;
     const short *rptr = (const short*)inputBuffer;
-    short *wptr = &data->recordedSamples[data->frameIndex];
+    // short *wptr = &data->recordedSamples[data->frameIndex];
     long framesToCalc;
     long i;
     int finished;
-    unsigned long framesLeft = data->maxFrameIndex - data->frameIndex;
+    unsigned long framesLeft = data->numSamples - data->timer;
 
     (void) outputBuffer; /* Prevent unused variable warnings. */
     (void) timeInfo;
@@ -326,7 +328,7 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
     {
         for( i=0; i<framesToCalc; i++ )
         {
-            *wptr++ = SAMPLE_SILENCE;  /* left */
+            data->recordedSamples.push_back(SAMPLE_SILENCE);  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = SAMPLE_SILENCE;  /* right */
         }
     }
@@ -334,11 +336,11 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
     {
         for( i=0; i<framesToCalc; i++ )
         {
-            *wptr++ = *rptr++;  /* left */
+            data->recordedSamples.push_back(*rptr++);  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
         }
     }
-    data->frameIndex += framesToCalc;
+    data->timer += framesToCalc;
     return finished;
 }
 
@@ -348,7 +350,7 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
 //                          PaStreamCallbackFlags statusFlags,
 //                          void *userData )
 // {
-//     paSharedData *data = (paSharedData*)userData;
+//     tarsAudioData *data = (tarsAudioData*)userData;
 //     short *rptr = &data->recordedSamples[data->frameIndex];
 //     short *wptr = (short*)outputBuffer;
 //     unsigned int i;
@@ -494,12 +496,12 @@ static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
                          PaStreamCallbackFlags statusFlags,
                          void *userData )
 {
-    paSharedData *data = (paSharedData*)userData;
-    short *rptr = &data->recordedSamples[data->frameIndex];
+    tarsAudioData *data = (tarsAudioData*)userData;
+    // short *rptr = &data->recordedSamples[data->frameIndex];
     short *wptr = (short*)outputBuffer;
     unsigned int i;
     int finished;
-    unsigned int framesLeft = data->maxFrameIndex - data->frameIndex;
+    int framesLeft = data->numSamples - data->timer;
 
     (void) inputBuffer; /* Prevent unused variable warnings. */
     (void) timeInfo;
@@ -511,7 +513,7 @@ static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
         /* final buffer... */
         for( i=0; i<framesLeft; i++ )
         {
-            *wptr++ = *rptr++;  /* left */
+            *wptr++ = data->recordedSamples[data->timer + i];  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
         }
         for( ; i<framesPerBuffer; i++ )
@@ -519,18 +521,18 @@ static int playAudioCallback( const void *inputBuffer, void *outputBuffer,
             *wptr++ = 0;  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = 0;  /* right */
         }
-        data->frameIndex += framesLeft;
+        data->timer += framesLeft;
         finished = paComplete;
     }
     else
     {
         for( i=0; i<framesPerBuffer; i++ )
         {
-            short sample = *rptr++;
+            short sample = data->recordedSamples[data->timer + i];
             *wptr++ = sample;  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
         }
-        data->frameIndex += framesPerBuffer;
+        data->timer += framesPerBuffer;
         finished = paContinue;
     }
     return finished;
