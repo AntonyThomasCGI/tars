@@ -37,7 +37,6 @@ static std::size_t WriteCallback(void *contents, std::size_t size, std::size_t n
 
 TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
 {
-    printf("here4\n");
     TARS_Intent intent;
     CURL *curl;
     CURLcode res;
@@ -69,10 +68,7 @@ TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
 
-    printf("here5\n");
-
     res = curl_easy_perform(curl);
-    printf("here6\n");
     if(res != CURLE_OK)
     {
         fprintf(stderr, "curl_easy_perform failed: %s\n", curl_easy_strerror(res));

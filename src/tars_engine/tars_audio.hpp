@@ -45,10 +45,10 @@ public:
     void startSpeaking();
     void record();
     void shutdown(PaError err);
+    tarsAudioData *userdata;
 
 private:
     PaStream      *stream;
-    tarsAudioData *userdata;
 
     void init();
 

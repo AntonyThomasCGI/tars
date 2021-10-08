@@ -8,7 +8,7 @@
 #define NUM_SECONDS (3)
 #define SAMPLE_RATE (16000)
 #define FRAMES_PER_BUFFER (512) // chunk size - this many frames per call to audio callback function.
-#define VOICE_THRESHOLD (2000) // TODO base this on the first few seconds of mic input? assume quite? hmm
+#define VOICE_THRESHOLD (5500) // TODO base this on the first few seconds of mic input? assume quite? hmm
 
 #define PA_SAMPLE_TYPE  paInt16
 #define SAMPLE_SILENCE  (0)
@@ -31,14 +31,15 @@ TARS_Audio::~TARS_Audio()
 void TARS_Audio::startListening()
 {
     PaError err;
-    err = Pa_StartStream( stream );
-    if( err != paNoError )
+
+
+    err = Pa_StartStream( this->stream );
+    if( err < 0 )
     {
         this->shutdown(err);
     }
-    printf("\nlistening...\n"); fflush(stdout);
-
-    while( ( err = Pa_IsStreamActive( stream ) ) == 1 )
+    
+    while( ( err = Pa_IsStreamActive( this->stream ) ) == 1 )
     {
         Pa_Sleep(1000);
     }
@@ -46,7 +47,8 @@ void TARS_Audio::startListening()
     {
         this->shutdown(err);
     }
-    err = Pa_CloseStream( stream );
+    // err = Pa_CloseStream( stream );
+    err = Pa_StopStream( this->stream );
     if( err != paNoError )
     {
         this->shutdown(err);
@@ -77,7 +79,7 @@ void TARS_Audio::startSpeaking()
 
     printf("=== Ok got audio, playing back. ===\n"); fflush(stdout);
     err = Pa_OpenStream(
-              &stream,
+              &this->stream,
               NULL, /* no input */
               &outputParameters,
               SAMPLE_RATE,
@@ -90,9 +92,9 @@ void TARS_Audio::startSpeaking()
         this->shutdown(err);
     }
 
-    if( stream )
+    if( this->stream )
     {
-        err = Pa_StartStream( stream );
+        err = Pa_StartStream( this->stream );
         if( err != paNoError )
         {
             this->shutdown(err);
@@ -100,13 +102,13 @@ void TARS_Audio::startSpeaking()
 
         printf("Waiting for playback to finish.\n"); fflush(stdout);
 
-        while( ( err = Pa_IsStreamActive( stream ) ) == 1 ) Pa_Sleep(100);
+        while( ( err = Pa_IsStreamActive( this->stream ) ) == 1 ) Pa_Sleep(100);
         if( err < 0 )
         {
             this->shutdown(err);
         }
 
-        err = Pa_CloseStream( stream );
+        err = Pa_CloseStream( this->stream );
         if( err != paNoError )
         {
             this->shutdown(err);
@@ -121,6 +123,14 @@ void TARS_Audio::record()
 
 void TARS_Audio::shutdown(PaError err)
 {
+    PaError closeErr;
+    closeErr = Pa_CloseStream( stream );
+    if( closeErr != paNoError )
+    {
+        fprintf( stderr, "An error occurred while closing the portaudio stream\n" );
+        fprintf( stderr, "Error number: %d\n", closeErr );
+        fprintf( stderr, "Error message: %s\n", Pa_GetErrorText( closeErr ) );
+    }
     Pa_Terminate();
     printf("Shutting down TARS_Audio.\n");
     if(err != paNoError)
@@ -146,12 +156,10 @@ void TARS_Audio::init()
     int                 numBytes;
     short               max, val;
     double              average;
-
+    
     err = paNoError;
-    printf("here\n");
 
     userdata->voiceEvent = 0;
-    printf("here2\n");
     userdata->timer = 0;
     userdata->numSamples = totalFrames = NUM_SECONDS * SAMPLE_RATE;
     // userdata.recordedSamples = recordedSamples;
@@ -183,7 +191,7 @@ void TARS_Audio::init()
     inputParameters.hostApiSpecificStreamInfo = NULL;
 
     err = Pa_OpenStream(
-              &stream,
+              &this->stream,
               &inputParameters,
               NULL,                  /* &outputParameters, */
               SAMPLE_RATE,
@@ -195,29 +203,33 @@ void TARS_Audio::init()
     {
         this->shutdown(err);
     };
+
 }
 
 void tars_audio::run(tarsAudioData *userdata) 
 {
     TARS_Audio tars_audio(userdata);
 
-    while (TARS_getState() != LISTENING)
+    while (TARS_getState() != SHUT_DOWN)
     {
-        std::this_thread::yield();
+        while (TARS_getState() != LISTENING)
+        {
+            std::this_thread::yield();
+        }
+        printf("\nt2:Listening...\n");
+        tars_audio.startListening();
+
+        // std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+
+
+        // printf("t2:Playing back audio...\n");
+
+        // tars_audio.startSpeaking();
+
+        printf("t2:Setting state.\n");
+
+        TARS_setState(AUDIO_EVENT);
     }
-    printf("t2:Listening\n");
-    tars_audio.startListening();
-
-    // std::this_thread::sleep_for(std::chrono::milliseconds(3000));
-
-
-    // printf("t2:Playing back audio...\n");
-
-    // tars_audio.startSpeaking();
-
-    printf("t2:Setting state.\n");
-
-    TARS_setState(AUDIO_EVENT);
 
     tars_audio.shutdown(paNoError);
 }
@@ -336,11 +348,23 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
     {
         for( i=0; i<framesToCalc; i++ )
         {
-            data->recordedSamples.push_back(*rptr++);  /* left */
+            short sample = *rptr++;
+
+            if ( data->voiceEvent == false && sample > VOICE_THRESHOLD )
+            {
+                printf("VOICE LOUD -- sample: %d\n", sample);
+                data->voiceEvent = true;
+                data->timer = 8000; // at 16000 sample/second this should get last 0.5 seconds of audio.
+            }
+
+            data->recordedSamples.push_back(sample);  /* left */
             // if( NUM_CHANNELS == 2 ) *wptr++ = *rptr++;  /* right */
         }
     }
-    data->timer += framesToCalc;
+    if( data->voiceEvent )
+    {
+        data->timer += framesToCalc;
+    }
     return finished;
 }
 
