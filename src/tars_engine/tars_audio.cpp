@@ -352,7 +352,7 @@ static int recordAudioCallback( const void *inputBuffer, void *outputBuffer,
 
             if ( data->voiceEvent == false && sample > VOICE_THRESHOLD )
             {
-                printf("VOICE LOUD -- sample: %d\n", sample);
+                printf("t2:Voice Event! -- sample: %d\n", sample);
                 data->voiceEvent = true;
                 data->timer = 8000; // at 16000 sample/second this should get last 0.5 seconds of audio.
             }

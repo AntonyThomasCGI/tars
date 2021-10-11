@@ -33,7 +33,7 @@ int main()
         {
             std::this_thread::yield();
         }
-        printf("t1d:Audio event!\n");
+        printf("t1:Recieved audio event!\n");
 
         // Get iterator of audio samples from beginning.
         // boost::circular_buffer<short>::iterator sampleIt = userdata->recordedSamples.begin();
@@ -84,6 +84,9 @@ int main()
 
 
         TARS_Intent intent = TARS_getIntent(binarySamples, binaryLen);
+
+        printf("t1:Intent: %s\n", intent.intent.c_str());
+        printf("t1:Confidence: %.2f\n", intent.confidence);
 
         userdata->timer = 0;
         userdata->voiceEvent = false;

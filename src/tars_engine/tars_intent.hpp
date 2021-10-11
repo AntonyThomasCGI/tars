@@ -4,10 +4,11 @@
 #define TARS_INTENT_HPP_INCLUDED
 
 #include <cstddef>
+#include <string>
 
 typedef struct {
-    char  intent;
-    float certainty;
+    std::string  intent;
+    float         confidence;
 } TARS_Intent;
 
 

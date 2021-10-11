@@ -12,16 +12,16 @@ FetchContent_Declare(
   GIT_TAG        147dd722548358763a8b649b3e4b41dfffbcfbb6 # v19.7.0
 )
   
-FetchContent_MakeAvailable(portaudio)
+# FetchContent_MakeAvailable(portaudio)
 
 
-# FetchContent_Decalre(
-#   rapidjson
-#   GIT_REPOSITORY https://github.com/Tencent/rapidjson/.git
-#   GIT_TAG        f54b0e47a08782a6131cc3d60f94d038fa6e0a51 # v1.1.0
-# )
+FetchContent_Declare(
+  jsoncpp
+  GIT_REPOSITORY https://github.com/open-source-parsers/jsoncpp.git
+  GIT_TAG        9059f5cad030ba11d37818847443a53918c327b1 # v1.9.4
+)
 
-# FetchContent_MakeAvailable(rapidjson)
+FetchContent_MakeAvailable(portaudio jsoncpp)
 
 
 

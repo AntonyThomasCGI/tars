@@ -4,18 +4,21 @@
 #include <iostream>
 #include <stdio.h>
 #include <string>
+
 #include <curl/curl.h>
-
-// #include "rapidjson/document.h"
-// #include "rapidjson/writer.h"
-// #include "rapidjson/stringbuffer.h"
+#include <json/json.h>
 
 
-static std::size_t WriteCallback(void *contents, std::size_t size, std::size_t nmemb, void *userp)
-{
-    ((std::string*)userp)->append((char*)contents, size * nmemb);
-    return size * nmemb;
-}
+static std::size_t WriteCallback(
+            const char* in,
+            std::size_t size,
+            std::size_t num,
+            std::string* out)
+    {
+        const std::size_t totalBytes(size * num);
+        out->append(in, totalBytes);
+        return totalBytes;
+    }
 
 
 // size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
@@ -40,7 +43,7 @@ TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
     TARS_Intent intent;
     CURL *curl;
     CURLcode res;
-    std::string response;
+    std::unique_ptr<std::string> httpData(new std::string());
 
     curl_global_init(CURL_GLOBAL_ALL);
 
@@ -66,18 +69,29 @@ TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
     curl_easy_setopt(curl, CURLOPT_POSTFIELDSIZE, binaryLen); // -1 makes curl to strlen (default anyway)
     
     curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, WriteCallback);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, httpData.get());
 
     res = curl_easy_perform(curl);
     if(res != CURLE_OK)
     {
         fprintf(stderr, "curl_easy_perform failed: %s\n", curl_easy_strerror(res));
     }
-    // printf("response: %s\n", response.c_str());
-    std::cout << response << std::endl;
-    
     curl_easy_cleanup(curl);
     curl_global_cleanup();
+
+    // printf("response: %s\n", response.c_str());
+    Json::Value jsonData;
+    Json::Reader jsonReader;
+
+    if (jsonReader.parse(*httpData, jsonData))
+    {
+        // std::cout << "Successfully parsed JSON data:" << std::endl;
+        // std::cout << jsonData.toStyledString() << std::endl;
+
+        intent.intent = jsonData["intents"][0]["name"].asString();
+        intent.confidence = jsonData["intents"][0]["confidence"].asFloat();
+    }
+    
 
     return intent;
 }
