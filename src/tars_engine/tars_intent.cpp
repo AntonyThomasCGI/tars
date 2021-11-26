@@ -88,6 +88,7 @@ TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
         // std::cout << "Successfully parsed JSON data:" << std::endl;
         // std::cout << jsonData.toStyledString() << std::endl;
 
+        intent.text = jsonData["text"].asString();
         intent.intent = jsonData["intents"][0]["name"].asString();
         intent.confidence = jsonData["intents"][0]["confidence"].asFloat();
     }

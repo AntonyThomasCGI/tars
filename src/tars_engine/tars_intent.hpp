@@ -7,8 +7,9 @@
 #include <string>
 
 typedef struct {
-    std::string  intent;
-    float         confidence;
+    std::string text; 
+    std::string intent;
+    float        confidence;
 } TARS_Intent;
 
 

@@ -13,14 +13,16 @@
 // #include <chrono>
 // #include <atomic>
 
-#include "tars_audio.hpp"
-#include "tars_intent.hpp"
+#include <tars_audio.hpp>
+#include <tars_intent.hpp>
+#include "tars_brain.hpp"
 
 
 int main()
 {
 
     tarsAudioData *userdata = new tarsAudioData;
+    TARS_Brain tarsBrain;
 
     std::thread tAudio (tars_audio::run, userdata);
 
@@ -35,36 +37,9 @@ int main()
         }
         printf("t1:Recieved audio event!\n");
 
-        // Get iterator of audio samples from beginning.
-        // boost::circular_buffer<short>::iterator sampleIt = userdata->recordedSamples.begin();
-
-        // std::string stringSamples;
-        
         std::size_t binaryLen = (userdata->numSamples) * sizeof(short);
 
-        // for ( boost::circular_buffer<short>::iterator it = userdata->recordedSamples.begin();
-        //       it != userdata->recordedSamples.end(); 
-        //       it++ )
-        // {
-        //     short sample = *it;
-        //     std::cout << sample << std::endl;
-        //     stringSamples.append((char*)&sample);
-        // }
-
-        // auto ostr = std::ostringstream();
-
-        // ostr << std::setw(sizeof(short));
-
-        // for ( boost::circular_buffer<short>::iterator it = userdata->recordedSamples.begin();
-        //       it != userdata->recordedSamples.end(); 
-        //       it++ )
-        // {
-        //     short sample = *it;
-        //     ostr << (char*)&sample;
-        // }
-
         short *recordedSamples;
-
 
         recordedSamples = (short *) malloc( userdata->numSamples * sizeof(short) ); /* From now on, recordedSamples is initialised. */
         if( recordedSamples == NULL )
@@ -73,20 +48,17 @@ int main()
         }
 
         for( int i=0; i<userdata->numSamples; i++ ) recordedSamples[i] = userdata->recordedSamples[i];
-        
 
-
-        // // Char pointer to memory address of iterator gets the raw binary data of samples.
+        // Char pointer to memory address of iterator gets the raw binary data of samples.
         const char *binarySamples = reinterpret_cast<const char *>(&recordedSamples[0]);  
-        // printf("here2\n");
-        // // Calc the binary length.
-        // printf("here3\n");
-
 
         TARS_Intent intent = TARS_getIntent(binarySamples, binaryLen);
 
+        printf("t1:Speech->Text: %s\n", intent.text.c_str());
         printf("t1:Intent: %s\n", intent.intent.c_str());
         printf("t1:Confidence: %.2f\n", intent.confidence);
+
+        tarsBrain.handleNewIntent(intent);
 
         userdata->timer = 0;
         userdata->voiceEvent = false;

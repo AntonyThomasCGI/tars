@@ -8,7 +8,7 @@
 #define NUM_SECONDS (3)
 #define SAMPLE_RATE (16000)
 #define FRAMES_PER_BUFFER (512) // chunk size - this many frames per call to audio callback function.
-#define VOICE_THRESHOLD (5500) // TODO base this on the first few seconds of mic input? assume quite? hmm
+#define VOICE_THRESHOLD (6600) // TODO base this on the first few seconds of mic input? assume quite? hmm
 
 #define PA_SAMPLE_TYPE  paInt16
 #define SAMPLE_SILENCE  (0)
@@ -226,7 +226,7 @@ void tars_audio::run(tarsAudioData *userdata)
 
         // tars_audio.startSpeaking();
 
-        printf("t2:Setting state.\n");
+        // printf("t2:Setting state.\n");
 
         TARS_setState(AUDIO_EVENT);
     }
