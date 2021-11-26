@@ -23,10 +23,10 @@ FetchContent_Declare(
 
 FetchContent_MakeAvailable(portaudio jsoncpp)
 
+set(CURL_LIBRARY "-lcurl")
 
-
-message(STATUS "Looking for CURL")
-find_package(CURL 7.64.1 REQUIRED)
+message(STATUS"Looking for CURL")
+find_package(CURL REQUIRED)# 7.64.1 REQUIRED)
 if(CURL_FOUND)
   message(STATUS "Found CURL version: ${CURL_VERSION_STRING}")
   message(STATUS "Using CURL include dir(s): ${CURL_INCLUDE_DIRS}")
