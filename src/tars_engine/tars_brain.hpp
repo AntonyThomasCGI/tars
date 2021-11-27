@@ -7,7 +7,11 @@
 #include "tars_intent.hpp"
 #include "tars_tasks.hpp"
 
-std::map<std::string, TaskFunction> taskMapping = {
+#include <cstddef>
+#include <string>
+
+
+const std::map<std::string, TaskFunction> taskMapping = {
     {"null_task",      tasks::nullTask},
     {"hello_world",    tasks::helloWorld},
     {"humour_setting", tasks::getHumourSetting},

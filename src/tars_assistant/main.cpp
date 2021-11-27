@@ -5,7 +5,6 @@
 
 #include <thread>
 #include <bitset>
-#include <string>
 #include <sstream>
 #include <fstream>
 // #include <iostream>
@@ -14,8 +13,8 @@
 // #include <atomic>
 
 #include <tars_audio.hpp>
-#include <tars_intent.hpp>
-#include "tars_brain.hpp"
+// #include <tars_intent.hpp>
+#include <tars_brain.hpp>
 
 
 int main()
