@@ -21,23 +21,6 @@ static std::size_t WriteCallback(
     }
 
 
-// size_t read_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
-// {
-//   FILE *readhere = (FILE *)userdata;
-//   curl_off_t nread;
-
-//   /* copy as much data as possible into the 'ptr' buffer, but no more than
-//      'size' * 'nmemb' bytes! */
-//   size_t retcode = fread(ptr, size, nmemb, readhere);
-
-//   nread = (curl_off_t)retcode;
-
-//   fprintf(stderr, "*** We read %" CURL_FORMAT_CURL_OFF_T
-//           " bytes from file\n", nread);
-//   return retcode;
-// }
-
-
 TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
 {
     TARS_Intent intent;
@@ -79,20 +62,43 @@ TARS_Intent TARS_getIntent(const char *audioBinary, std::size_t binaryLen)
     curl_easy_cleanup(curl);
     curl_global_cleanup();
 
-    // printf("response: %s\n", response.c_str());
     Json::Value jsonData;
     Json::Reader jsonReader;
 
     if (jsonReader.parse(*httpData, jsonData))
     {
-        // std::cout << "Successfully parsed JSON data:" << std::endl;
-        // std::cout << jsonData.toStyledString() << std::endl;
+        std::cout << "Successfully parsed JSON data:" << std::endl;
+        std::cout << jsonData.toStyledString() << std::endl;
 
         intent.text = jsonData["text"].asString();
         intent.intent = jsonData["intents"][0]["name"].asString();
         intent.confidence = jsonData["intents"][0]["confidence"].asFloat();
-    }
-    
+
+        // Get entites from response.
+        std::vector<std::string> entityNames = jsonData["entities"].getMemberNames();
+
+        for (auto &entityName : entityNames)
+        {
+            for (unsigned int i = 0; i < jsonData["entities"][entityName].size(); i = i + 1)
+            {
+                TARS_Entity entity;
+                
+                entity.type = jsonData["entities"][entityName][i]["role"].asString();
+                entity.value = jsonData["entities"][entityName][i]["value"].asString();
+                entity.confidence = jsonData["entities"][entityName][i]["confidence"].asFloat();
+                
+                intent.entities.push_back(entity);
+            }
+        printf("type: %s\n", intent.entities[0].type.c_str());
+        printf("value: %s\n", intent.entities[0].value.c_str());
+        printf("conf: %0.4f\n", intent.entities[0].confidence);
+        }
+
+    } else {
+        fprintf(stderr, "//ERROR-- Could not parse intent response.");
+    };
+
+
 
     return intent;
 }

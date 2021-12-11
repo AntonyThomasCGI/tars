@@ -4,6 +4,12 @@ project(tars VERSION 1.0.0)
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+# if(MSVC)
+#   add_compile_options(/W3 /WX)
+# else()
+#   add_compile_options(-W -Wall -Werror)
+# endif()
+
 include(FetchContent)
 
 FetchContent_Declare(
@@ -11,9 +17,6 @@ FetchContent_Declare(
   GIT_REPOSITORY https://github.com/PortAudio/portaudio.git
   GIT_TAG        147dd722548358763a8b649b3e4b41dfffbcfbb6 # v19.7.0
 )
-  
-# FetchContent_MakeAvailable(portaudio)
-
 
 FetchContent_Declare(
   jsoncpp
@@ -49,6 +52,7 @@ endif()
 
 
 include_directories(${CURL_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+
 
 add_subdirectory(src/tars_engine)
 add_subdirectory(src/tars_assistant)

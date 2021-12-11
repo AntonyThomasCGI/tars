@@ -5,11 +5,22 @@
 
 #include <cstddef>
 #include <string>
+#include <vector>
+
+
+typedef struct {
+    std::string type;
+    std::string value;
+    float        confidence;
+
+} TARS_Entity;
+
 
 typedef struct {
     std::string text; 
     std::string intent;
     float        confidence;
+    std::vector<TARS_Entity> entities;
 } TARS_Intent;
 
 
