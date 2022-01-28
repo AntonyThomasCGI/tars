@@ -5,6 +5,9 @@
 #include "tars_tasks.hpp"
 
 
+int humourSetting = 100;
+
+
 void tasks::helloWorld(TARS_Intent *taskData)
 {
     printf("TARS says: Hello world!\n");

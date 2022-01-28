@@ -3,7 +3,7 @@
 
 #include "tars_intent.hpp"
 
-int humourSetting = 100;
+extern int humourSetting;
 
 namespace tasks {
     void helloWorld(TARS_Intent *taskData);
